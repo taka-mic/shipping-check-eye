@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Package, ScanSearch, ClipboardCheck } from 'lucide-react';
+import { Package, ScanSearch, ClipboardCheck, BookOpen } from 'lucide-react';
 import MasterRegistration from './components/MasterRegistration';
 import ShippingCheck from './components/ShippingCheck';
 import ShippingVerification from './components/ShippingVerification';
+import Manual from './components/Manual';
 import { loadMasters } from './storage';
 import type { ColorMaster, DetectionResult } from './types';
 import './index.css';
 
-type Tab = 'master' | 'check' | 'verify';
+type Tab = 'master' | 'check' | 'verify' | 'manual';
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'master', label: 'マスタ登録', icon: <Package size={18} /> },
   { id: 'check', label: '出荷チェック', icon: <ScanSearch size={18} /> },
   { id: 'verify', label: '照合', icon: <ClipboardCheck size={18} /> },
+  { id: 'manual', label: '使い方', icon: <BookOpen size={18} /> },
 ];
 
 export default function App() {
@@ -66,6 +68,9 @@ export default function App() {
         )}
         {activeTab === 'verify' && (
           <ShippingVerification results={results} onResults={setResults} />
+        )}
+        {activeTab === 'manual' && (
+          <Manual />
         )}
       </main>
     </div>
