@@ -290,4 +290,22 @@ describe('bfsClusters', () => {
     const result = bfsClusters(hits, 10);
     expect(result.length).toBe(2);
   });
+
+  it('影で中央が欠けた1枚シールは1クラスタになる（ポストマージ）', () => {
+    // 左半分: x=0〜40、右半分: x=60〜100（x=50付近が影で欠けている）
+    const hits: { x: number; y: number }[] = [];
+    for (let gx = 0; gx <= 4; gx++) hits.push({ x: gx * 10, y: 50 });
+    for (let gx = 6; gx <= 10; gx++) hits.push({ x: gx * 10, y: 50 });
+    const result = bfsClusters(hits, 10);
+    expect(result.length).toBe(1);
+  });
+
+  it('明らかに別々の2製品（距離200px超）は2クラスタのまま', () => {
+    const hits = [
+      { x: 10, y: 10 }, { x: 20, y: 10 },
+      { x: 210, y: 10 }, { x: 220, y: 10 },
+    ];
+    const result = bfsClusters(hits, 10);
+    expect(result.length).toBe(2);
+  });
 });

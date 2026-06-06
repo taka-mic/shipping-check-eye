@@ -89,15 +89,19 @@ export function hsvToRgb(h: number, s: number, v: number): { r: number; g: numbe
 /**
  * BFS connected-component clustering on a grid of hit points.
  * Points are in pixel coordinates sampled at `step` intervals.
- * Returns one centroid per connected component (= 1 product instance).
+ * After BFS, nearby components (centroids within `mergeDist` px) are merged
+ * to handle shadows/reflections that create small gaps inside one sticker.
+ * Returns one centroid per product instance.
  */
 export function bfsClusters(
   hits: { x: number; y: number }[],
-  step: number
+  step: number,
+  mergeDist = 60,
 ): { x: number; y: number }[] {
   if (hits.length === 0) return [];
 
   // Build a Set keyed by grid cell coords for O(1) lookup
+  // Extend neighborhood to 2 grid steps to bridge 1-cell gaps
   const cellSet = new Set<string>();
   const cellMap = new Map<string, { x: number; y: number }>();
   for (const h of hits) {
@@ -109,11 +113,11 @@ export function bfsClusters(
   }
 
   const visited = new Set<string>();
-  const components: { x: number; y: number }[][] = [];
+  const centroids: { x: number; y: number; size: number }[] = [];
 
   for (const key of cellSet) {
     if (visited.has(key)) continue;
-    // BFS
+    // BFS with 2-step neighborhood to bridge small gaps
     const queue = [key];
     visited.add(key);
     const component: { x: number; y: number }[] = [];
@@ -121,8 +125,8 @@ export function bfsClusters(
       const cur = queue.shift()!;
       component.push(cellMap.get(cur)!);
       const [gx, gy] = cur.split(',').map(Number);
-      for (let dx = -1; dx <= 1; dx++) {
-        for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        for (let dy = -2; dy <= 2; dy++) {
           if (dx === 0 && dy === 0) continue;
           const nk = `${gx + dx},${gy + dy}`;
           if (cellSet.has(nk) && !visited.has(nk)) {
@@ -132,13 +136,35 @@ export function bfsClusters(
         }
       }
     }
-    components.push(component);
+    centroids.push({
+      x: Math.round(component.reduce((s, c) => s + c.x, 0) / component.length),
+      y: Math.round(component.reduce((s, c) => s + c.y, 0) / component.length),
+      size: component.length,
+    });
   }
 
-  return components.map(cells => ({
-    x: Math.round(cells.reduce((s, c) => s + c.x, 0) / cells.length),
-    y: Math.round(cells.reduce((s, c) => s + c.y, 0) / cells.length),
-  }));
+  // Second pass: merge centroids that are still too close (gap bridging)
+  const merged: boolean[] = new Array(centroids.length).fill(false);
+  const result: { x: number; y: number }[] = [];
+  for (let i = 0; i < centroids.length; i++) {
+    if (merged[i]) continue;
+    let cx = centroids[i].x * centroids[i].size;
+    let cy = centroids[i].y * centroids[i].size;
+    let totalSize = centroids[i].size;
+    for (let j = i + 1; j < centroids.length; j++) {
+      if (merged[j]) continue;
+      const dx = centroids[i].x - centroids[j].x;
+      const dy = centroids[i].y - centroids[j].y;
+      if (Math.sqrt(dx * dx + dy * dy) < mergeDist) {
+        cx += centroids[j].x * centroids[j].size;
+        cy += centroids[j].y * centroids[j].size;
+        totalSize += centroids[j].size;
+        merged[j] = true;
+      }
+    }
+    result.push({ x: Math.round(cx / totalSize), y: Math.round(cy / totalSize) });
+  }
+  return result;
 }
 
 // Marker colors that contrast well for overlays
