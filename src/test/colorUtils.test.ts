@@ -301,9 +301,10 @@ describe('bfsClusters', () => {
   });
 
   it('明らかに別々の2製品（距離200px超）は2クラスタのまま', () => {
+    // 製品間は最低2cm以上の間隔があるため、200px超は確実に別製品
     const hits = [
       { x: 10, y: 10 }, { x: 20, y: 10 },
-      { x: 210, y: 10 }, { x: 220, y: 10 },
+      { x: 230, y: 10 }, { x: 240, y: 10 },
     ];
     const result = bfsClusters(hits, 10);
     expect(result.length).toBe(2);

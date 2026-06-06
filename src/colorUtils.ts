@@ -96,7 +96,7 @@ export function hsvToRgb(h: number, s: number, v: number): { r: number; g: numbe
 export function bfsClusters(
   hits: { x: number; y: number }[],
   step: number,
-  mergeDist = 60,
+  mergeDist = 120,
 ): { x: number; y: number }[] {
   if (hits.length === 0) return [];
 
