@@ -46,7 +46,10 @@ export default function ShippingCheck({ masters, results, onResults }: Props) {
     const detections: DetectionResult[] = [];
     masters.forEach((master, i) => {
       const hits = rawHits.get(master.id)!;
-      const clusters = bfsClusters(hits, SCAN_STEP);
+      // シール1枚の影分断を吸収しつつ製品間隔（2cm以上）を保つため
+      // キャンバス幅の20%を合体距離とする
+      const mergeDist = canvas.width * 0.20;
+      const clusters = bfsClusters(hits, SCAN_STEP, mergeDist);
       if (clusters.length > 0) {
         detections.push({
           masterId: master.id,

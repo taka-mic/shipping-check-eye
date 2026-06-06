@@ -281,12 +281,12 @@ describe('bfsClusters', () => {
     expect(result.length).toBe(1);
   });
 
-  it('2つの離れた塊はそれぞれ1クラスタ', () => {
+  it('2つの離れた塊はそれぞれ1クラスタ（200px超の間隔）', () => {
     const hits: { x: number; y: number }[] = [];
-    // 塊1: (0,0)〜(20,20)
+    // 塊1: (0,0)〜(20,20) → 重心 (10,10)
     for (let gx = 0; gx <= 2; gx++) for (let gy = 0; gy <= 2; gy++) hits.push({ x: gx * 10, y: gy * 10 });
-    // 塊2: (100,100)〜(120,120)（10グリッド以上離れている）
-    for (let gx = 10; gx <= 12; gx++) for (let gy = 10; gy <= 12; gy++) hits.push({ x: gx * 10, y: gy * 10 });
+    // 塊2: (200,0)〜(220,20) → 重心 (210,10)、距離200px > mergeDist=180
+    for (let gx = 20; gx <= 22; gx++) for (let gy = 0; gy <= 2; gy++) hits.push({ x: gx * 10, y: gy * 10 });
     const result = bfsClusters(hits, 10);
     expect(result.length).toBe(2);
   });
