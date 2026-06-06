@@ -161,7 +161,8 @@ export default function ShippingCheck({ masters, results, onResults }: Props) {
           )}
         </div>
 
-        {!imageLoaded ? (
+        {/* アップロードエリア — 画像未選択時のみ表示 */}
+        {!imageLoaded && (
           <div
             className="border-2 border-dashed border-purple-300 rounded-lg p-8 text-center cursor-pointer hover:bg-purple-50 transition-colors"
             onClick={() => fileRef.current?.click()}
@@ -175,21 +176,22 @@ export default function ShippingCheck({ masters, results, onResults }: Props) {
               <p className="text-xs text-red-400 mt-2 font-medium">先にマスタ登録タブで製品の色を登録してください</p>
             )}
           </div>
-        ) : (
-          <div className="relative overflow-auto">
-            <div className="relative inline-block w-full">
-              <canvas ref={canvasRef} className="rounded border border-gray-200 block max-w-full w-full" />
-              <canvas ref={overlayRef} className="absolute top-0 left-0 rounded pointer-events-none max-w-full w-full" />
-              {scanning && (
-                <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded">
-                  <div className="flex items-center gap-2 bg-white border border-purple-200 shadow rounded-full px-4 py-2 text-sm text-purple-700 font-medium">
-                    <RefreshCw size={16} className="animate-spin" />スキャン中...
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
         )}
+
+        {/* キャンバスは常にDOMに存在させる（非表示で待機） */}
+        <div className={imageLoaded ? 'relative overflow-auto' : 'hidden'}>
+          <div className="relative inline-block w-full">
+            <canvas ref={canvasRef} className="rounded border border-gray-200 block max-w-full w-full" />
+            <canvas ref={overlayRef} className="absolute top-0 left-0 rounded pointer-events-none max-w-full w-full" />
+            {scanning && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/60 rounded">
+                <div className="flex items-center gap-2 bg-white border border-purple-200 shadow rounded-full px-4 py-2 text-sm text-purple-700 font-medium">
+                  <RefreshCw size={16} className="animate-spin" />スキャン中...
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden"
           onChange={e => { const f = e.target.files?.[0]; if (f) loadImage(f); e.target.value = ''; }} />
