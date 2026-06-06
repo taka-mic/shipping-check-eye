@@ -86,6 +86,61 @@ export function hsvToRgb(h: number, s: number, v: number): { r: number; g: numbe
   };
 }
 
+/**
+ * BFS connected-component clustering on a grid of hit points.
+ * Points are in pixel coordinates sampled at `step` intervals.
+ * Returns one centroid per connected component (= 1 product instance).
+ */
+export function bfsClusters(
+  hits: { x: number; y: number }[],
+  step: number
+): { x: number; y: number }[] {
+  if (hits.length === 0) return [];
+
+  // Build a Set keyed by grid cell coords for O(1) lookup
+  const cellSet = new Set<string>();
+  const cellMap = new Map<string, { x: number; y: number }>();
+  for (const h of hits) {
+    const gx = Math.round(h.x / step);
+    const gy = Math.round(h.y / step);
+    const key = `${gx},${gy}`;
+    cellSet.add(key);
+    cellMap.set(key, h);
+  }
+
+  const visited = new Set<string>();
+  const components: { x: number; y: number }[][] = [];
+
+  for (const key of cellSet) {
+    if (visited.has(key)) continue;
+    // BFS
+    const queue = [key];
+    visited.add(key);
+    const component: { x: number; y: number }[] = [];
+    while (queue.length > 0) {
+      const cur = queue.shift()!;
+      component.push(cellMap.get(cur)!);
+      const [gx, gy] = cur.split(',').map(Number);
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx === 0 && dy === 0) continue;
+          const nk = `${gx + dx},${gy + dy}`;
+          if (cellSet.has(nk) && !visited.has(nk)) {
+            visited.add(nk);
+            queue.push(nk);
+          }
+        }
+      }
+    }
+    components.push(component);
+  }
+
+  return components.map(cells => ({
+    x: Math.round(cells.reduce((s, c) => s + c.x, 0) / cells.length),
+    y: Math.round(cells.reduce((s, c) => s + c.y, 0) / cells.length),
+  }));
+}
+
 // Marker colors that contrast well for overlays
 export const MARKER_COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4',

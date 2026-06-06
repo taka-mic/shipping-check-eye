@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rgbToHsv, hsvDistance, matchesColor, hsvToRgb, extractColorFromRegion } from '../colorUtils';
+import { rgbToHsv, hsvDistance, matchesColor, hsvToRgb, extractColorFromRegion, bfsClusters } from '../colorUtils';
 import type { HSV } from '../types';
 
 // ─── rgbToHsv ────────────────────────────────────────────────────────────────
@@ -230,5 +230,64 @@ describe('extractColorFromRegion', () => {
     const ctx = makeCtx(128, 128, 128);
     const result = extractColorFromRegion(ctx, 50, 50);
     expect(result).toEqual({ r: 128, g: 128, b: 128 });
+  });
+});
+
+// ─── bfsClusters ─────────────────────────────────────────────────────────────
+
+describe('bfsClusters', () => {
+  it('空配列を渡すと空配列を返す', () => {
+    expect(bfsClusters([], 10)).toEqual([]);
+  });
+
+  it('1点だけのとき1クラスタを返す', () => {
+    const result = bfsClusters([{ x: 10, y: 10 }], 10);
+    expect(result.length).toBe(1);
+  });
+
+  it('隣接する点は1クラスタにまとめられる（つながった領域 → 1製品）', () => {
+    // step=10 のグリッド上で隣接する3点
+    const hits = [
+      { x: 10, y: 10 },
+      { x: 20, y: 10 },
+      { x: 30, y: 10 },
+    ];
+    const result = bfsClusters(hits, 10);
+    expect(result.length).toBe(1);
+    expect(result[0].x).toBe(20); // 平均
+    expect(result[0].y).toBe(10);
+  });
+
+  it('離れた点は別クラスタになる（2つの製品）', () => {
+    const hits = [
+      { x: 10, y: 10 },
+      { x: 20, y: 10 },
+      { x: 200, y: 200 }, // 遠い
+      { x: 210, y: 200 },
+    ];
+    const result = bfsClusters(hits, 10);
+    expect(result.length).toBe(2);
+  });
+
+  it('大きな連続領域が1クラスタにまとめられる（旧アルゴリズムのバグ再現防止）', () => {
+    // 10×10グリッドの連続したヒット（100点）
+    const hits: { x: number; y: number }[] = [];
+    for (let gx = 0; gx < 10; gx++) {
+      for (let gy = 0; gy < 10; gy++) {
+        hits.push({ x: gx * 10, y: gy * 10 });
+      }
+    }
+    const result = bfsClusters(hits, 10);
+    expect(result.length).toBe(1);
+  });
+
+  it('2つの離れた塊はそれぞれ1クラスタ', () => {
+    const hits: { x: number; y: number }[] = [];
+    // 塊1: (0,0)〜(20,20)
+    for (let gx = 0; gx <= 2; gx++) for (let gy = 0; gy <= 2; gy++) hits.push({ x: gx * 10, y: gy * 10 });
+    // 塊2: (100,100)〜(120,120)（10グリッド以上離れている）
+    for (let gx = 10; gx <= 12; gx++) for (let gy = 10; gy <= 12; gy++) hits.push({ x: gx * 10, y: gy * 10 });
+    const result = bfsClusters(hits, 10);
+    expect(result.length).toBe(2);
   });
 });

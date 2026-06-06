@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback } from 'react';
 import { Upload, ScanSearch, RefreshCw, RotateCcw, PackageCheck, PackageX } from 'lucide-react';
-import { rgbToHsv, matchesColor, MARKER_COLORS } from '../colorUtils';
+import { rgbToHsv, matchesColor, bfsClusters, MARKER_COLORS } from '../colorUtils';
 import type { ColorMaster, DetectionResult } from '../types';
 
 interface Props {
@@ -10,7 +10,6 @@ interface Props {
 }
 
 const SCAN_STEP = 10;
-const CLUSTER_DIST = 30;
 
 export default function ShippingCheck({ masters, results, onResults }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -47,20 +46,7 @@ export default function ShippingCheck({ masters, results, onResults }: Props) {
     const detections: DetectionResult[] = [];
     masters.forEach((master, i) => {
       const hits = rawHits.get(master.id)!;
-      const clusters: { x: number; y: number }[] = [];
-      for (const hit of hits) {
-        let merged = false;
-        for (const c of clusters) {
-          const dx = hit.x - c.x, dy = hit.y - c.y;
-          if (Math.sqrt(dx * dx + dy * dy) < CLUSTER_DIST) {
-            c.x = Math.round((c.x + hit.x) / 2);
-            c.y = Math.round((c.y + hit.y) / 2);
-            merged = true;
-            break;
-          }
-        }
-        if (!merged) clusters.push({ ...hit });
-      }
+      const clusters = bfsClusters(hits, SCAN_STEP);
       if (clusters.length > 0) {
         detections.push({
           masterId: master.id,
