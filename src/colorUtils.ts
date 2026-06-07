@@ -97,6 +97,7 @@ export function bfsClusters(
   hits: { x: number; y: number }[],
   step: number,
   mergeDist = 180,
+  minCells = 1,
 ): { x: number; y: number }[] {
   if (hits.length === 0) return [];
 
@@ -136,6 +137,8 @@ export function bfsClusters(
         }
       }
     }
+    // ノイズ除去：ヒット数が minCells 未満のクラスタは破棄
+    if (component.length < minCells) continue;
     centroids.push({
       x: Math.round(component.reduce((s, c) => s + c.x, 0) / component.length),
       y: Math.round(component.reduce((s, c) => s + c.y, 0) / component.length),

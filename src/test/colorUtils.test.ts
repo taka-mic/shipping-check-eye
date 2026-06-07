@@ -281,14 +281,23 @@ describe('bfsClusters', () => {
     expect(result.length).toBe(1);
   });
 
-  it('2つの離れた塊はそれぞれ1クラスタ（200px超の間隔）', () => {
+  it('2つの離れた塊はそれぞれ1クラスタ（mergeDist超の間隔）', () => {
     const hits: { x: number; y: number }[] = [];
     // 塊1: (0,0)〜(20,20) → 重心 (10,10)
     for (let gx = 0; gx <= 2; gx++) for (let gy = 0; gy <= 2; gy++) hits.push({ x: gx * 10, y: gy * 10 });
-    // 塊2: (200,0)〜(220,20) → 重心 (210,10)、距離200px > mergeDist=180
-    for (let gx = 20; gx <= 22; gx++) for (let gy = 0; gy <= 2; gy++) hits.push({ x: gx * 10, y: gy * 10 });
+    // 塊2: (250,0)〜(270,20) → 重心 (260,10)、距離250px > デフォルトmergeDist=180
+    for (let gx = 25; gx <= 27; gx++) for (let gy = 0; gy <= 2; gy++) hits.push({ x: gx * 10, y: gy * 10 });
     const result = bfsClusters(hits, 10);
     expect(result.length).toBe(2);
+  });
+
+  it('minCells未満の小クラスタはノイズとして除外される', () => {
+    const hits = [
+      { x: 10, y: 10 }, // 1点のみの小クラスタ（ノイズ）
+      { x: 200, y: 200 }, { x: 210, y: 200 }, { x: 220, y: 200 }, // 3点の本物クラスタ
+    ];
+    const result = bfsClusters(hits, 10, 180, 3);
+    expect(result.length).toBe(1); // 小クラスタは除外
   });
 
   it('影で中央が欠けた1枚シールは1クラスタになる（ポストマージ）', () => {

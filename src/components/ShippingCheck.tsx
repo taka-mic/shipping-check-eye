@@ -11,6 +11,12 @@ interface Props {
 
 const SCAN_STEP = 10;
 
+// 近接検出マージ設定（調整可能）
+// 同色の検出点がこの距離（画像幅に対する割合）以内なら同一シールとみなす
+const PROXIMITY_THRESHOLD_RATIO = 0.30;
+// BFSグリッド上のヒット数がこれ未満のクラスタはノイズとして除外
+const MIN_CLUSTER_CELLS = 3;
+
 export default function ShippingCheck({ masters, results, onResults }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -46,10 +52,8 @@ export default function ShippingCheck({ masters, results, onResults }: Props) {
     const detections: DetectionResult[] = [];
     masters.forEach((master, i) => {
       const hits = rawHits.get(master.id)!;
-      // シール1枚の影分断を吸収しつつ製品間隔（2cm以上）を保つため
-      // キャンバス幅の20%を合体距離とする
-      const mergeDist = canvas.width * 0.20;
-      const clusters = bfsClusters(hits, SCAN_STEP, mergeDist);
+      const proximityThreshold = canvas.width * PROXIMITY_THRESHOLD_RATIO;
+      const clusters = bfsClusters(hits, SCAN_STEP, proximityThreshold, MIN_CLUSTER_CELLS);
       if (clusters.length > 0) {
         detections.push({
           masterId: master.id,
