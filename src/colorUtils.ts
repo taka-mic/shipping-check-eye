@@ -96,7 +96,7 @@ export function hsvToRgb(h: number, s: number, v: number): { r: number; g: numbe
 export function bfsClusters(
   hits: { x: number; y: number }[],
   step: number,
-  mergeDist = 180,
+  mergeDist = 200,
   minCells = 1,
 ): { x: number; y: number }[] {
   if (hits.length === 0) return [];
@@ -118,7 +118,7 @@ export function bfsClusters(
 
   for (const key of cellSet) {
     if (visited.has(key)) continue;
-    // BFS with 2-step neighborhood to bridge small gaps
+    // 4ステップ近傍(40px)でBFS — 影による隙間を橋渡し（1製品=1シールの前提）
     const queue = [key];
     visited.add(key);
     const component: { x: number; y: number }[] = [];
@@ -126,8 +126,8 @@ export function bfsClusters(
       const cur = queue.shift()!;
       component.push(cellMap.get(cur)!);
       const [gx, gy] = cur.split(',').map(Number);
-      for (let dx = -2; dx <= 2; dx++) {
-        for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -4; dx <= 4; dx++) {
+        for (let dy = -4; dy <= 4; dy++) {
           if (dx === 0 && dy === 0) continue;
           const nk = `${gx + dx},${gy + dy}`;
           if (cellSet.has(nk) && !visited.has(nk)) {

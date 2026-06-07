@@ -18,7 +18,7 @@ export interface ScanSettings {
 }
 
 export const DEFAULT_SCAN_SETTINGS: ScanSettings = {
-  proximityThresholdRatio: 0.30,
+  proximityThresholdRatio: 0.35,
   minClusterCells: 3,
 };
 

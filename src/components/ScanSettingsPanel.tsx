@@ -67,7 +67,7 @@ export default function ScanSettingsPanel({ settings, onChange }: Props) {
         <div className="space-y-6">
           <SliderRow
             label="近接マージ距離"
-            sub="画像幅に対する割合 — 大きくするとシールの影・分断を吸収しやすくなる"
+            sub="画像幅に対する割合 — 1製品=1シールのため、同色の近接検出は積極的にマージ"
             value={settings.proximityThresholdRatio}
             min={0.10}
             max={0.50}
