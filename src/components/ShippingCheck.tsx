@@ -1,23 +1,19 @@
 import { useRef, useState, useCallback } from 'react';
 import { Upload, ScanSearch, RefreshCw, RotateCcw, PackageCheck, PackageX } from 'lucide-react';
 import { rgbToHsv, matchesColor, bfsClusters, MARKER_COLORS } from '../colorUtils';
-import type { ColorMaster, DetectionResult } from '../types';
+import type { ColorMaster, DetectionResult, ScanSettings } from '../types';
+import { DEFAULT_SCAN_SETTINGS } from '../types';
 
 interface Props {
   masters: ColorMaster[];
   results: DetectionResult[];
   onResults: (r: DetectionResult[]) => void;
+  scanSettings?: ScanSettings;
 }
 
 const SCAN_STEP = 10;
 
-// 近接検出マージ設定（調整可能）
-// 同色の検出点がこの距離（画像幅に対する割合）以内なら同一シールとみなす
-const PROXIMITY_THRESHOLD_RATIO = 0.30;
-// BFSグリッド上のヒット数がこれ未満のクラスタはノイズとして除外
-const MIN_CLUSTER_CELLS = 3;
-
-export default function ShippingCheck({ masters, results, onResults }: Props) {
+export default function ShippingCheck({ masters, results, onResults, scanSettings = DEFAULT_SCAN_SETTINGS }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
@@ -25,7 +21,7 @@ export default function ShippingCheck({ masters, results, onResults }: Props) {
   const [scanning, setScanning] = useState(false);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
-  const runScan = useCallback(async (canvas: HTMLCanvasElement, overlay: HTMLCanvasElement) => {
+  const runScan = useCallback(async (canvas: HTMLCanvasElement, overlay: HTMLCanvasElement, settings: ScanSettings = scanSettings) => {
     setScanning(true);
     await new Promise(r => setTimeout(r, 10));
 
@@ -52,8 +48,8 @@ export default function ShippingCheck({ masters, results, onResults }: Props) {
     const detections: DetectionResult[] = [];
     masters.forEach((master, i) => {
       const hits = rawHits.get(master.id)!;
-      const proximityThreshold = canvas.width * PROXIMITY_THRESHOLD_RATIO;
-      const clusters = bfsClusters(hits, SCAN_STEP, proximityThreshold, MIN_CLUSTER_CELLS);
+      const proximityThreshold = canvas.width * settings.proximityThresholdRatio;
+      const clusters = bfsClusters(hits, SCAN_STEP, proximityThreshold, settings.minClusterCells);
       if (clusters.length > 0) {
         detections.push({
           masterId: master.id,
@@ -95,7 +91,7 @@ export default function ShippingCheck({ masters, results, onResults }: Props) {
 
     onResults(detections);
     setScanning(false);
-  }, [masters, onResults]);
+  }, [masters, onResults, scanSettings]);
 
   const loadImage = (file: File) => {
     const url = URL.createObjectURL(file);

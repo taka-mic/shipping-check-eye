@@ -1,30 +1,38 @@
 import { useState, useEffect } from 'react';
-import { Package, ScanSearch, ClipboardCheck, BookOpen } from 'lucide-react';
+import { Package, ScanSearch, ClipboardCheck, BookOpen, Settings2 } from 'lucide-react';
 import MasterRegistration from './components/MasterRegistration';
 import ShippingCheck from './components/ShippingCheck';
 import ShippingVerification from './components/ShippingVerification';
 import Manual from './components/Manual';
-import { loadMasters } from './storage';
-import type { ColorMaster, DetectionResult } from './types';
+import ScanSettingsPanel from './components/ScanSettingsPanel';
+import { loadMasters, loadSettings, saveSettings } from './storage';
+import type { ColorMaster, DetectionResult, ScanSettings } from './types';
 import './index.css';
 
-type Tab = 'master' | 'check' | 'verify' | 'manual';
+type Tab = 'master' | 'check' | 'verify' | 'manual' | 'settings';
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'master', label: 'マスタ登録', icon: <Package size={18} /> },
   { id: 'check', label: '出荷チェック', icon: <ScanSearch size={18} /> },
   { id: 'verify', label: '照合', icon: <ClipboardCheck size={18} /> },
   { id: 'manual', label: '使い方', icon: <BookOpen size={18} /> },
+  { id: 'settings', label: '設定', icon: <Settings2 size={18} /> },
 ];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('master');
   const [masters, setMasters] = useState<ColorMaster[]>([]);
   const [results, setResults] = useState<DetectionResult[]>([]);
+  const [scanSettings, setScanSettings] = useState<ScanSettings>(loadSettings);
 
   useEffect(() => {
     setMasters(loadMasters());
   }, []);
+
+  const handleSettingsChange = (s: ScanSettings) => {
+    setScanSettings(s);
+    saveSettings(s);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -64,13 +72,16 @@ export default function App() {
           <MasterRegistration masters={masters} onMastersChange={setMasters} />
         )}
         {activeTab === 'check' && (
-          <ShippingCheck masters={masters} results={results} onResults={setResults} />
+          <ShippingCheck masters={masters} results={results} onResults={setResults} scanSettings={scanSettings} />
         )}
         {activeTab === 'verify' && (
           <ShippingVerification results={results} onResults={setResults} />
         )}
         {activeTab === 'manual' && (
           <Manual />
+        )}
+        {activeTab === 'settings' && (
+          <ScanSettingsPanel settings={scanSettings} onChange={handleSettingsChange} />
         )}
       </main>
     </div>
